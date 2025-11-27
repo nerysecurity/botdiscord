@@ -21,7 +21,9 @@ class Estudo(commands.Cog):
             f"Conteúdo: **{conteudo}**\n\n"
             f"Agora use `!quiz` para receber perguntas personalizadas!"
         )
-
+        
+        print("estudo_id =", user_id)
+        print("preferencia_id=", self.preferencias.get(user_id))
     def get_preferencia(self, user_id):
         return self.preferencias.get(user_id)
 

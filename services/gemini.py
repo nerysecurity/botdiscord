@@ -35,7 +35,6 @@ Responda EXATAMENTE no seguinte JSON:
 }}
 """
 
-    # Corpo da requisição no formato da API Gemini 2.5 Flash
     body = {
         "contents": [
             {
@@ -57,21 +56,17 @@ Responda EXATAMENTE no seguinte JSON:
         async with session.post(GEMINI_URL, headers=headers, json=body) as response:
             resposta = await response.json()
 
-            # DEBUG opcional para ver raw da IA
             print("RAW GEMINI:", resposta)
 
-            # A resposta vem assim:
-            # resposta["candidates"][0]["content"]["parts"][0]["text"]
             try:
                 texto = resposta["candidates"][0]["content"]["parts"][0]["text"]
             except:
                 raise ValueError("A IA não retornou o formato esperado.")
 
-            # Agora tentar transformar o texto em JSON
             try:
                 return json.loads(texto)
             except:
-                # Tentar extrair JSON manualmente
+            
                 import re
                 match = re.search(r"\{.*\}", texto, flags=re.S)
                 if match:

@@ -1,7 +1,7 @@
 from discord.ext import commands
 import asyncio
-import database.database as db
-from cogs.gemini import gerar_pergunta_gemini
+from database import database as db
+from services.gemini import gerar_pergunta_gemini
 
 class Quiz(commands.Cog):
     def __init__(self, bot):
@@ -10,18 +10,18 @@ class Quiz(commands.Cog):
     @commands.command(name="quiz")
     async def quiz(self, ctx):
         print("DEBUG 1 — entrou no comando !quiz")
-        print("DEBUG 2 — estudo_cog =", estudo_cog)
-        print("DEBUG 3 — pref =", pref)
-        print("DEBUG 4 — chamando IA:", disciplina, conteudo)
-        print("DEBUG 5 — retorno da IA:", pergunta)
-
 
   
-        user_id = ctx.author.id
-
+        user_id = ctx.author.id 
+        print("user_id =", user_id)
         # pega disciplina e conteúdo do cog estudio
         estudo_cog = self.bot.get_cog("estudo")
+        print("DEBUG 2 — estudo_cog =", estudo_cog)
+        
         pref = estudo_cog.get_preferencia(user_id)
+
+       
+        print("DEBUG 3 — pref =", pref)
 
         if not pref:
             return await ctx.send(
@@ -32,9 +32,13 @@ class Quiz(commands.Cog):
         disciplina = pref["disciplina"]
         conteudo   = pref["conteudo"]
 
+
         # gera pergunta via IA
         pergunta = await gerar_pergunta_gemini(disciplina, conteudo)
         print("DEBUG IA:", pergunta)
+
+        print("DEBUG 4 — chamando IA:", disciplina, conteudo)
+        print("DEBUG 5 — retorno da IA:", pergunta)
 
         tipo = pergunta["tipo"]
         texto = pergunta["pergunta"]
@@ -68,13 +72,13 @@ class Quiz(commands.Cog):
 
         resposta_usuario = msg.content.strip()
 
-        # validação da resposta
+        #validação da resposta
         if tipo == "multipla":
             correta_bool = (resposta_usuario.upper() == correta.upper())
         else:
             correta_bool = (resposta_usuario.lower() == correta.lower())
 
-        # XP diário
+        #XP diário
         respostas_hoje = await db.obter_respostas_do_dia(user_id)
         foid10 = respostas_hoje < 10
 
@@ -86,7 +90,7 @@ class Quiz(commands.Cog):
 
         await db.incrementar_resposta_diaria(user_id)
 
-        # salvar histórico
+        #salvar histórico
         await db.registrar_resposta(
             user_id=user_id,
             pergunta_texto=texto,
@@ -99,7 +103,7 @@ class Quiz(commands.Cog):
             foi_10=foid10
         )
 
-        # resposta final
+        #resposta final
         if correta_bool:
             await ctx.send(f"✅ Correto! Ganhou **{xp} XP** 🎉")
         else:

@@ -28,11 +28,11 @@ async def on_ready():
 
 #Carregar os módulos Cogs
 async def carregar_cogs():
-    try:
-        await bot.load_extension("cogs.basico")
-        print("[OK] basico carregado")
-    except Exception as e:
-        print("[ERRO basico]", e)
+    # try:
+    #     await bot.load_extension("cogs.basico")
+    #     print("[OK] basico carregado")
+    # except Exception as e:
+    #     print("[ERRO basico]", e)
 
     try:
         await bot.load_extension("cogs.perfil")
@@ -51,6 +51,8 @@ async def carregar_cogs():
         print("[OK] quiz carregado")
     except Exception as e:
         print("[ERRO quiz]", e)
+
+
 
 
 
