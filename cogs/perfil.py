@@ -9,13 +9,13 @@ class Perfil(commands.Cog):
     async def xp(self, ctx):
         user_id = ctx.author.id
 
-        # Garante que existe no banco
+        # Garante que existe no banco 
         await db.registrar_usuario(user_id)
 
         # Busca o XP
-        xp = await db.buscar_xp(user_id)
+        p = await db.buscar_xp(user_id)
 
-        await ctx.send(f"{ctx.author.mention}, você tem **{xp} XP**!")
+        await ctx.send(f"{ctx.author.mention}, você tem ** {xp} XP**!")
 
 async def setup(bot):
     await bot.add_cog(Perfil(bot))
