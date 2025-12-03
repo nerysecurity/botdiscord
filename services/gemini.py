@@ -1,25 +1,36 @@
 import os
-import json
 import aiohttp
+import json
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = os.getenv("GEMINI_API_URL")
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
+
+# Remove ```json ``` e extrai só o JSON puro
+def limpar_json(texto: str):
+    texto = texto.replace("```json", "").replace("```", "").strip()
+    match = re.search(r"\{[\s\S]*\}", texto)
+    return match.group(0) if match else texto
+
 
 async def gerar_pergunta_gemini(disciplina, conteudo):
+
     prompt = f"""
-Gere uma pergunta de quiz sobre a disciplina: {disciplina}
-e o conteúdo específico: {conteudo}.
+Gere UMA pergunta de alta qualidade sobre:
 
-A pergunta pode ser:
-- do tipo 'aberta'
-- do tipo 'multipla' (5 alternativas A,B,C,D,E)
+Disciplina: {disciplina}
+Conteúdo: {conteudo}
 
-Escolha aleatoriamente.
-
-Responda EXATAMENTE no seguinte JSON:
+Regras:
+- Varie dificuldade (fácil, médio).
+- Evite perguntas repetidas.
+- Pergunta pode ser aberta ou múltipla escolha.
+- Alternativas devem ser plausíveis e embaralhadas.
+- Responda SOMENTE com um JSON válido:
 
 {{
   "tipo": "aberta" ou "multipla",
@@ -36,40 +47,38 @@ Responda EXATAMENTE no seguinte JSON:
 """
 
     body = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ]
+        "model": "gemini-2.5-flash",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.85
     }
 
     headers = {
         "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_KEY
+        "Authorization": f"Bearer {GEMINI_KEY}"
     }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(GEMINI_URL, headers=headers, json=body) as response:
-            resposta = await response.json()
+        async with session.post(GEMINI_URL, headers=headers, json=body) as resp:
 
-            print("RAW GEMINI:", resposta)
+            status = resp.status
+            raw = await resp.json()
+
+            #Debug mínimo para diagnosticar erro
+            print("=== GEMINI DEBUG ===")
+            print("STATUS:", status)
+            print(json.dumps(raw, indent=2))
+            print("====================")
+
+            if status != 200:
+                raise ValueError("Erro da API Gemini.")
+
+            texto = raw["choices"][0]["message"].get("content", "")
+
+            texto_limpo = limpar_json(texto)
 
             try:
-                texto = resposta["candidates"][0]["content"]["parts"][0]["text"]
+                return json.loads(texto_limpo)
             except:
-                raise ValueError("A IA não retornou o formato esperado.")
-
-            try:
-                return json.loads(texto)
-            except:
-            
-                import re
-                match = re.search(r"\{.*\}", texto, flags=re.S)
-                if match:
-                    return json.loads(match.group(0))
-                else:
-                    raise ValueError("O Gemini não retornou um JSON válido.")
+                print("JSON RECEBIDO (bruto):", texto)
+                print("JSON LIMPO:", texto_limpo)
+                raise ValueError("Gemini não retornou JSON válido.")

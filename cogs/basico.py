@@ -1,29 +1,48 @@
 import discord
 from discord.ext import commands
 
-class Basico(commands.Cog):
-    """Comandos básicos do bot (ping, help, etc)."""
 
+class Basico(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def ping(self, contexto):
-        """Testa se o bot está online."""
-        await contexto.send("🏓 Pong!")
+    #ping
+    @commands.command(name="ping")
+    async def ping(self, ctx):
+        await ctx.send("🏓 Pong!")
 
-    @commands.command(name="help")
-    async def ajuda(self, contexto):
-        """Mostra a lista de comandos disponíveis."""
+    #ajuda
+    @commands.command(name="ajuda")
+    async def help(self, ctx):
         texto = (
-            "**Comandos disponíveis:**\n"
-            "`!ping` — Testa se o bot está online\n"
-            "`!help` — Mostra esta mensagem de ajuda\n"
-            "`!perfil` — Mostra seu perfil (em breve: XP e nível)\n"
+            "**📘 Lista de comandos:**\n\n"
+
+            "=== ⚙️ **Geral** ===\n"
+            "`!ping` — Interação com usuário\n"
+            "`!ajuda` — Mostra esta mensagem de ajuda\n\n"
+
+            "=== 📚 **Estudo** ===\n"
+            "`!estudar <disciplina> <conteúdo>` — Define o que você quer estudar\n\n"
+
+            "=== 🎮 **Quiz e Treino** ===\n"
+            "`!quiz` — Inicia um quiz infinito em uma thread privada\n"
+            "`!diario` — Faz as 10 perguntas diárias com XP alto\n"
+            "`!stop` — Encerra a sessão atual de quiz\n\n"
+
+            "=== 👤 **Perfil e XP** ===\n"
+            "`!perfil` — Mostra seu perfil completo\n"
+            "`!xp` — Mostra seu XP total\n\n"
+
+            "=== 🏆 **Ranking** ===\n"
+            "`!ranking` — Mostra os usuários com mais XP\n\n"
+
+            "=== 📜 **Histórico** ===\n"
+            "`!historico` — Mostra suas últimas respostas\n"
         )
-        await contexto.send(texto)
+
+        await ctx.send(texto)
 
 
-# Função obrigatória para registrar o Cog
+#registra o cog
 async def setup(bot):
     await bot.add_cog(Basico(bot))
