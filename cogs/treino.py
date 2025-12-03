@@ -10,14 +10,12 @@ class Treino(commands.Cog):
         self.bot = bot
         self.sessoes = {}  # user_id -> dados da sessão
 
-
     # pegar preferencia do cog estudo
     def pegar_pref(self, user_id):
         estudo = self.bot.get_cog("Estudo")
         if estudo:
             return estudo.get_preferencia(user_id)
         return None
-
 
     # criar thread privada
     async def criar_thread_privado(self, ctx, nome, usuario):
@@ -36,7 +34,6 @@ class Treino(commands.Cog):
                     pass
 
         return thread
-
 
     # enviar pergunta
     async def enviar_pergunta(self, user_id):
@@ -75,7 +72,6 @@ class Treino(commands.Cog):
             opcoes = "\n".join([f"{l}) {alt[l]}" for l in "ABCDE"])
             await canal.send(opcoes)
 
-
     # encerrar sessão
     async def encerrar_sessao(self, user_id):
         if user_id not in self.sessoes:
@@ -91,10 +87,7 @@ class Treino(commands.Cog):
 
         del self.sessoes[user_id]
 
-
-    # ======================
     # QUIZ ILIMITADO
-    # ======================
     @commands.command(name="quiz")
     async def quiz(self, ctx):
         user = ctx.author
@@ -124,10 +117,7 @@ class Treino(commands.Cog):
 
         await self.enviar_pergunta(user_id)
 
-
-    # ======================
     # DESAFIO DIÁRIO
-    # ======================
     @commands.command(name="diario")
     async def diario(self, ctx):
         user = ctx.author
@@ -162,25 +152,24 @@ class Treino(commands.Cog):
 
         await self.enviar_pergunta(user_id)
 
-
-    # ======================
     # LISTENER DAS RESPOSTAS
-    # ======================
     @commands.Cog.listener()
     async def on_message(self, msg):
-
         try:
             if msg.author.bot:
                 return
 
             user_id = msg.author.id
 
+            # permite comandos se não houver sessão
             if user_id not in self.sessoes:
+                await self.bot.process_commands(msg)
                 return
 
             sessao = self.sessoes[user_id]
 
             if msg.channel.id != sessao["canal"].id:
+                await self.bot.process_commands(msg)
                 return
 
             conteudo = msg.content.lower().strip()
@@ -231,7 +220,6 @@ class Treino(commands.Cog):
 
         except Exception as e:
             print("❌ ERRO no on_message:", e)
-
 
 async def setup(bot):
     await bot.add_cog(Treino(bot))
