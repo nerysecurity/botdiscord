@@ -268,7 +268,7 @@ psql -U bentobot_user -d bentobot -f db/seed.sql
 
 ---
 
-# 📘 14. Lista de Comandos
+# 📘 Lista de Comandos
 
 ### ⚙️ Geral
 
