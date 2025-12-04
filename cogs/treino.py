@@ -4,7 +4,6 @@ import asyncio
 from services.gemini import gerar_pergunta_gemini
 import database.database as db
 
-
 class Treino(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -37,8 +36,6 @@ class Treino(commands.Cog):
 
     # enviar pergunta
     async def enviar_pergunta(self, user_id):
-        await asyncio.sleep(0)
-
         if user_id not in self.sessoes:
             return
 
@@ -64,7 +61,6 @@ class Treino(commands.Cog):
             return
 
         sessao["ultima"] = pergunta
-
         await canal.send(f"🧠 **{pergunta['pergunta']}**")
 
         if pergunta["tipo"] == "multipla":
@@ -76,15 +72,12 @@ class Treino(commands.Cog):
     async def encerrar_sessao(self, user_id):
         if user_id not in self.sessoes:
             return
-
         canal = self.sessoes[user_id]["canal"]
-
         try:
             await canal.send("🛑 Sessão encerrada.")
             await canal.edit(archived=True)
         except:
             pass
-
         del self.sessoes[user_id]
 
     # QUIZ ILIMITADO
@@ -96,15 +89,11 @@ class Treino(commands.Cog):
         pref = self.pegar_pref(user_id)
         if not pref:
             return await ctx.send("⚠️ Use `!estudar <disciplina> <conteúdo>` primeiro.")
-
         if user_id in self.sessoes:
             return await ctx.send("⚠️ Você já tem uma sessão ativa. Use `!stop`.")
 
         thread = await self.criar_thread_privado(ctx, f"quiz-{user.name}", user)
-
-        await thread.send(
-            f"🎮 {user.mention}, seu quiz começou!\nUse **!stop** para encerrar."
-        )
+        await thread.send(f"🎮 {user.mention}, seu quiz começou!\nUse **!stop** para encerrar.")
 
         self.sessoes[user_id] = {
             "modo": "estudo",
@@ -126,7 +115,6 @@ class Treino(commands.Cog):
         pref = self.pegar_pref(user_id)
         if not pref:
             return await ctx.send("⚠️ Use `!estudar <disciplina> <conteúdo>` primeiro.")
-
         if user_id in self.sessoes:
             return await ctx.send("⚠️ Você já tem uma sessão ativa. Use `!stop`.")
 
@@ -135,11 +123,8 @@ class Treino(commands.Cog):
             return await ctx.send("🔥 Você já fez suas **10 perguntas diárias** hoje!")
 
         thread = await self.criar_thread_privado(ctx, f"diario-{user.name}", user)
-
-        await thread.send(
-            f"📅 {user.mention}, iniciando seu **desafio diário**!\n"
-            "Serão **10 perguntas**.\nUse **!stop** para encerrar."
-        )
+        await thread.send(f"📅 {user.mention}, iniciando seu **desafio diário**!\n"
+                          "Serão **10 perguntas**.\nUse **!stop** para encerrar.")
 
         self.sessoes[user_id] = {
             "modo": "diario",
@@ -155,71 +140,51 @@ class Treino(commands.Cog):
     # LISTENER DAS RESPOSTAS
     @commands.Cog.listener()
     async def on_message(self, msg):
-        try:
-            if msg.author.bot:
-                return
+        if msg.author.bot:
+            return
 
-            user_id = msg.author.id
+        user_id = msg.author.id
+        sessao = self.sessoes.get(user_id)
 
-            # permite comandos se não houver sessão
-            if user_id not in self.sessoes:
-                await self.bot.process_commands(msg)
-                return
+        # Se não há sessão ativa ou mensagem não é do canal da sessão, apenas retorna
+        if not sessao or msg.channel.id != sessao["canal"].id:
+            return
 
-            sessao = self.sessoes[user_id]
+        conteudo = msg.content.lower().strip()
 
-            if msg.channel.id != sessao["canal"].id:
-                await self.bot.process_commands(msg)
-                return
+        # parar sessão
+        if conteudo == "!stop":
+            await sessao["canal"].send("🛑 Sessão encerrada!")
+            await sessao["canal"].edit(archived=True)
+            del self.sessoes[user_id]
+            return
 
-            conteudo = msg.content.lower().strip()
+        pergunta = sessao["ultima"]
+        if not pergunta:
+            return
 
-            # parar sessão
-            if conteudo == "!stop":
-                await sessao["canal"].send("🛑 Sessão encerrada!")
-                await sessao["canal"].edit(archived=True)
-                del self.sessoes[user_id]
-                return
+        correta = pergunta["correta"].strip().lower()
+        if pergunta["tipo"] == "multipla":
+            correta = correta[0]
 
-            pergunta = sessao["ultima"]
-            if not pergunta:
-                return
+        acertou = (conteudo == correta)
 
-            correta = pergunta["correta"].strip().lower()
-            if pergunta["tipo"] == "multipla":
-                correta = correta[0]
+        # calcular xp
+        xp = 20 if sessao["modo"] == "diario" and acertou else 5 if acertou else 0
 
-            acertou = (conteudo == correta)
+        # feedback
+        if acertou:
+            await sessao["canal"].send(f"✅ Correto! (+{xp} XP)")
+        else:
+            await sessao["canal"].send(f"❌ Errado! Resposta correta: **{correta.upper()}**")
 
-            # calcular xp
-            if sessao["modo"] == "diario":
-                xp = 20 if acertou else 0
-            else:
-                xp = 5 if acertou else 0
+        if sessao["modo"] == "diario":
+            await db.incrementar_resposta_diaria(user_id)
+        if acertou:
+            await db.adicionar_xp(user_id, xp)
 
-            # feedback
-            if acertou:
-                await sessao["canal"].send(f"✅ Correto! (+{xp} XP)")
-            else:
-                await sessao["canal"].send(
-                    f"❌ Errado! Resposta correta: **{correta.upper()}**"
-                )
-
-            await asyncio.sleep(0)
-
-            # atualizar BD
-            if sessao["modo"] == "diario":
-                await db.incrementar_resposta_diaria(user_id)
-
-            if acertou:
-                await db.adicionar_xp(user_id, xp)
-
-            sessao["respondidas"] += 1
-
-            await self.enviar_pergunta(user_id)
-
-        except Exception as e:
-            print("❌ ERRO no on_message:", e)
+        sessao["respondidas"] += 1
+        await self.enviar_pergunta(user_id)
 
 async def setup(bot):
     await bot.add_cog(Treino(bot))

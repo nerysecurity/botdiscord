@@ -5,23 +5,21 @@ import os
 import asyncio
 import database.database as db
 
-
-#Carregar variáveis de ambiente 
+# Carregar variáveis de ambiente
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
 
-#Configurar intents
+# Configurar intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.guilds = True
 intents.messages = True
 
-#Criar instância do bot
+# Criar instância do bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-
-#Evento: quando o bot iniciar
+# Evento: quando o bot iniciar
 @bot.event
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
@@ -32,55 +30,30 @@ async def on_ready():
     except Exception as e:
         print("❌ ERRO ao conectar ao banco:", e)
 
-
-
-#Carregar os módulos Cogs
+# Carregar os módulos Cogs
 async def carregar_cogs():
-    try:
-        await bot.load_extension("cogs.basico")
-        print("[OK] basico carregado")
-    except Exception as e:
-        print("[ERRO basico]", e)
+    cogs = [
+        "cogs.basico",
+        "cogs.estudo",
+        "cogs.perfil",
+        "cogs.treino",
+        "cogs.ranking",
+        "cogs.historico"
+    ]
 
-    try:
-        await bot.load_extension("cogs.estudo")
-        print("[OK] estudo carregado")
-    except Exception as e:
-        print("[ERRO estudo]", e)
-    
-    try:
-        await bot.load_extension("cogs.perfil")
-        print("[OK] perfil carregado")
-    except Exception as e:
-        print("[ERRO perfil]", e)
+    for cog in cogs:
+        cog_name = cog.split(".")[-1].capitalize()
+        if not bot.get_cog(cog_name):
+            try:
+                await bot.load_extension(cog)
+                print(f"[OK] {cog} carregado")
+            except Exception as e:
+                print(f"[ERRO] {cog}", e)
 
-    try:
-        await bot.load_extension("cogs.treino")
-        print("[OK] treino carregado")
-    except Exception as e:
-        print("[ERRO] treino", e)
-
-    try:
-        await bot.load_extension("cogs.ranking")
-        print("[OK] ranking carregado")
-    except Exception as e:
-        print("[ERRO] ranking", e)
-
-    try:
-        await bot.load_extension("cogs.historico")
-        print("[OK] historico carregado")
-    except Exception as e:
-        print("[ERRO] historioc", e)
-
-
-
-
-#Iniciar o bot
+# Iniciar o bot
 async def main():
-    async with bot:
-        await carregar_cogs()
-        await bot.start(token)
+    await carregar_cogs()
+    await bot.start(token)  # start apenas uma vez
 
 if __name__ == "__main__":
     asyncio.run(main())
-

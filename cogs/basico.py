@@ -34,7 +34,7 @@ class Basico(commands.Cog):
             "`!xp` — Mostra seu XP total\n\n"
 
             "=== 🏆 **Ranking** ===\n"
-            "`!ranking` — Mostra os usuários com mais XP\n\n"
+            "`!rank` — Mostra os usuários com mais XP\n\n"
 
             "=== 📜 **Histórico** ===\n"
             "`!historico` — Mostra suas últimas respostas\n"
